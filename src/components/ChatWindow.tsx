@@ -7,17 +7,18 @@ import { sendMessage } from "@/api/chatApi";
 import { cn } from "@/lib/utils";
 
 interface ChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
+id: string;
+role: "user" | "assistant";
+content: string;
 }
 
 interface ChatWindowProps {
-  botId: string;
+botId: string;
 }
 
 export default function ChatWindow({ botId }: ChatWindowProps) {
   const [input, setInput] = useState("");
+
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome",
@@ -28,11 +29,14 @@ export default function ChatWindow({ botId }: ChatWindowProps) {
 
   const mutation = useMutation({
     mutationFn: (message: string) => sendMessage(botId, message),
-    onSuccess: (response) => {
+    onSuccess: (response: any) => {
+      console.log("CHAT RESPONSE:", response);
+
       const reply =
-        response?.data?.reply ||
-        response?.data?.message ||
-        "Thanks! I have received your message.";
+        response?.reply ||
+        response?.message ||
+        "AI did not return a reply.";
+
       setMessages((prev) => [
         ...prev,
         {
@@ -54,24 +58,39 @@ export default function ChatWindow({ botId }: ChatWindowProps) {
     },
   });
 
-  const canSend = useMemo(() => input.trim().length > 0 && !mutation.isPending, [input, mutation.isPending]);
+  const canSend = useMemo(
+    () => input.trim().length > 0 && !mutation.isPending,
+    [input, mutation.isPending]
+  );
 
   const handleSend = () => {
     if (!canSend) return;
+
     const message = input.trim();
+
     setInput("");
+
     setMessages((prev) => [
       ...prev,
-      { id: `${Date.now()}-user`, role: "user", content: message },
+      {
+        id: `${Date.now()}-user`,
+        role: "user",
+        content: message,
+      },
     ]);
+
     mutation.mutate(message);
   };
 
   return (
     <div className="rounded-3xl border border-white/5 bg-white/[0.03] p-6 md:p-8 space-y-6">
       <div className="space-y-1">
-        <h2 className="text-lg font-black text-white uppercase tracking-tight">Live Test Chat</h2>
-        <p className="text-sm text-gray-400">Send messages to the bot and review responses.</p>
+        <h2 className="text-lg font-black text-white uppercase tracking-tight">
+          Live Test Chat
+        </h2>
+        <p className="text-sm text-gray-400">
+          Send messages to the bot and review responses.
+        </p>
       </div>
 
       <div className="flex flex-col gap-4 max-h-[420px] overflow-y-auto pr-2 custom-scrollbar">
@@ -88,6 +107,7 @@ export default function ChatWindow({ botId }: ChatWindowProps) {
                 <Bot className="h-4 w-4 text-primary" />
               </div>
             )}
+
             <div
               className={cn(
                 "max-w-[70%] rounded-2xl px-4 py-3 text-sm leading-relaxed border",
@@ -98,6 +118,7 @@ export default function ChatWindow({ botId }: ChatWindowProps) {
             >
               {message.content}
             </div>
+
             {message.role === "user" && (
               <div className="h-8 w-8 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center">
                 <User className="h-4 w-4 text-white" />
@@ -120,12 +141,17 @@ export default function ChatWindow({ botId }: ChatWindowProps) {
             }
           }}
         />
+
         <Button
           onClick={handleSend}
           disabled={!canSend}
           className="h-12 rounded-xl bg-primary text-black font-black uppercase tracking-widest"
         >
-          {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          {mutation.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Send className="h-4 w-4" />
+          )}
         </Button>
       </div>
     </div>
