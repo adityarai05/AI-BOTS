@@ -1,32 +1,34 @@
-
-console.log("Server file started...");
 require("dotenv").config();
-const authRoutes = require("./routes/auth");
+const path = require("path");
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
-const userRoutes = require("./routes/users");   // import routes
+const botsRoutes = require("./routes/bots");
+const knowledgeRoutes = require("./routes/knowledge");
+const chatRoutes = require("./routes/chat");
+const analyticsRoutes = require("./routes/analytics");
 
 const app = express();
-app.use((req,res,next)=>{
-  console.log("Incoming request:", req.url);
-  next();
-});
 
 // Middlewares
 app.use(cors());
-app.use(express.json());
-app.use("/api/auth", authRoutes);
-// Register routes
-app.use("/api/users", userRoutes);
+app.use(express.json({ limit: "2mb" }));
 
-console.log("MONGO_URI value:", process.env.MONGO_URI);
+// Serve widget script
+app.use(express.static(path.join(__dirname, "public")));
+
+// Register routes (no auth)
+app.use("/api/bots", botsRoutes);
+app.use("/api/knowledge", knowledgeRoutes);
+app.use("/api/chat", chatRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGO_URI)
-.then(() => console.log("✅ MongoDB Connected Successfully"))
-.catch((err) => console.log("❌ Mongo Error:", err.message));
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.log("Mongo error:", err.message));
 
 // Test route
 app.get("/", (req, res) => {
@@ -34,6 +36,7 @@ app.get("/", (req, res) => {
 });
 
 // Start Server
-app.listen(process.env.PORT || 5000, () => {
-  console.log(`🚀 Server running on port ${process.env.PORT || 5000}`);
+const port = process.env.PORT || 5000;
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });
